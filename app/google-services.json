@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "683892147853",
+    "project_id": "dashboard-hidroponik-kangkung",
+    "storage_bucket": "dashboard-hidroponik-kangkung.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:683892147853:android:ce0624d7e6cb36699804c4",
+        "android_client_info": {
+          "package_name": "com.example.dashboardhidroponikkangkung"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArKBn8t1XB43WBdAeJc40hoWJzGgrZEhs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
