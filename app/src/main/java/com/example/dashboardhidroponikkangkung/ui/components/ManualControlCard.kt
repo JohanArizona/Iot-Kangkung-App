@@ -11,28 +11,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.dashboardhidroponikkangkung.ui.theme.StatusCritical
 import com.example.dashboardhidroponikkangkung.ui.theme.StatusOptimal
-import kotlin.math.roundToInt
 
 @Composable
 fun ManualControlCard(
     isAutomatic: Boolean,
     onToggleMode: () -> Unit,
-    onActivatePump: (String, Int) -> Unit,
+    onActivatePumps: () -> Unit,
+    onDeactivatePumps: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-    var pendingPump by remember { mutableStateOf("") }
-    var pendingDuration by remember { mutableIntStateOf(0) }
-
-    var pumpADuration by remember { mutableFloatStateOf(5f) }
-    var pumpBDuration by remember { mutableFloatStateOf(5f) }
+    var showActivateDialog by remember { mutableStateOf(false) }
+    var showDeactivateDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -41,7 +36,7 @@ fun ManualControlCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Header with Mode Toggle
+            // Header + Switch Mode
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -65,7 +60,7 @@ fun ManualControlCard(
                         fontWeight = FontWeight.SemiBold
                     )
                     Switch(
-                        checked = !isAutomatic,
+                        checked = !isAutomatic, // true = Manual
                         onCheckedChange = { onToggleMode() },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.onSurface,
@@ -79,36 +74,72 @@ fun ManualControlCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Konten Manual
             AnimatedVisibility(visible = !isAutomatic) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Pump A Control
-                    PumpControl(
-                        title = "Pompa Pupuk A",
-                        duration = pumpADuration,
-                        onDurationChange = { pumpADuration = it },
-                        onActivate = {
-                            pendingPump = "A"
-                            pendingDuration = pumpADuration.roundToInt()
-                            showDialog = true
-                        },
-                        enabled = !isAutomatic
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                    // Pump B Control
-                    PumpControl(
-                        title = "Pompa Pupuk B",
-                        duration = pumpBDuration,
-                        onDurationChange = { pumpBDuration = it },
-                        onActivate = {
-                            pendingPump = "B"
-                            pendingDuration = pumpBDuration.roundToInt()
-                            showDialog = true
-                        },
-                        enabled = !isAutomatic
-                    )
+                    // Info Box
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = "Kontrol Pompa Pupuk",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Pompa A dan B akan menyala/mati bersamaan",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+
+                    // Tombol Aktifkan
+                    Button(
+                        onClick = { showActivateDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = StatusOptimal,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(vertical = 16.dp)
+                    ) {
+                        Text(
+                            text = "Aktifkan Pompa",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Tombol Matikan
+                    OutlinedButton(
+                        onClick = { showDeactivateDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = StatusCritical
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(vertical = 16.dp)
+                    ) {
+                        Text(
+                            text = "Matikan Pompa",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
+            // Info kalau lagi mode Auto
             AnimatedVisibility(visible = isAutomatic) {
                 Box(
                     modifier = Modifier
@@ -119,7 +150,7 @@ fun ManualControlCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Mode otomatis aktif. Matikan untuk kontrol manual.",
+                        text = "Mode otomatis aktif. Matikan switch untuk kontrol manual.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -128,116 +159,59 @@ fun ManualControlCard(
         }
     }
 
-    // Confirmation Dialog
-    if (showDialog) {
+    // === Dialog Konfirmasi Aktifkan ===
+    if (showActivateDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = { showActivateDialog = false },
             title = {
-                Text(
-                    text = "Konfirmasi Aktivasi",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Konfirmasi Aktivasi", fontWeight = FontWeight.Bold)
             },
             text = {
-                Text(
-                    text = "Aktifkan ${
-                        when (pendingPump) {
-                            "A" -> "Pompa Pupuk A"
-                            "B" -> "Pompa Pupuk B"
-                            else -> "Pompa"
-                        }
-                    } selama $pendingDuration detik?",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text("Aktifkan Pompa Pupuk A dan B sekarang?")
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        onActivatePump(pendingPump, pendingDuration)
-                        showDialog = false
-                    }
-                ) {
-                    Text("Aktifkan", color = StatusOptimal)
+                TextButton(onClick = {
+                    onActivatePumps()          // Langsung panggil ViewModel
+                    showActivateDialog = false
+                }) {
+                    Text("Aktifkan", color = StatusOptimal, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
+                TextButton(onClick = { showActivateDialog = false }) {
                     Text("Batal")
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(20.dp)
         )
     }
-}
 
-@Composable
-fun PumpControl(
-    title: String,
-    duration: Float,
-    onDurationChange: (Float) -> Unit,
-    onActivate: () -> Unit,
-    enabled: Boolean
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp)
-    ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = "${duration.roundToInt()} detik",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Slider(
-                value = duration,
-                onValueChange = onDurationChange,
-                valueRange = 1f..30f,
-                enabled = enabled,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.onSurface,
-                    activeTrackColor = MaterialTheme.colorScheme.onSurface,
-                    inactiveTrackColor = MaterialTheme.colorScheme.outline
-                )
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = onActivate,
-                enabled = enabled,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = StatusOptimal,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Aktifkan",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
+    // === Dialog Konfirmasi Matikan ===
+    if (showDeactivateDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeactivateDialog = false },
+            title = {
+                Text("Konfirmasi Mematikan", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text("Matikan Pompa Pupuk A dan B sekarang?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeactivatePumps()        // Langsung panggil ViewModel
+                    showDeactivateDialog = false
+                }) {
+                    Text("Matikan", color = StatusCritical, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeactivateDialog = false }) {
+                    Text("Batal")
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 }

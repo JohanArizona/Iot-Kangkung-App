@@ -49,6 +49,7 @@ fun HidroponikScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
+
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -60,11 +61,9 @@ fun HidroponikScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     Text(
-                        text = "Memuat data...",
+                        text = "Memuat data dari ESP32...",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -74,7 +73,6 @@ fun HidroponikScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -89,13 +87,13 @@ fun HidroponikScreen(
                     )
                 }
 
-                // Pump Status Section
+                // Status Pompa
                 item {
                     Text(
-                        text = "Status Pompa",
+                        text = "Status Pompa Pupuk",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
@@ -114,30 +112,30 @@ fun HidroponikScreen(
                     )
                 }
 
-                // Chart
+                // Grafik TDS
                 item {
                     TdsChart(historyData = uiState.history)
                 }
 
-                // Manual Control
+                // KONTROL MANUAL (INI YANG BARU & BENAR)
                 item {
                     ManualControlCard(
                         isAutomatic = uiState.isAutomatic,
                         onToggleMode = { viewModel.toggleMode() },
-                        onActivatePump = { pump, duration ->
-                            viewModel.activatePump(pump, duration)
-                        }
+                        onActivatePumps = { viewModel.activatePumps() },     // Nyalain A & B
+                        onDeactivatePumps = { viewModel.deactivatePumps() }  // Matiin A & B
                     )
                 }
 
-                // Bottom spacing
+                // Spacer bawah biar ga ketutup navigation bar
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
     }
 
+    // Dialog Setting TDS
     if (showSettingsDialog) {
         TdsSettingsDialog(
             currentMinTds = tdsRange.min,
@@ -145,9 +143,11 @@ fun HidroponikScreen(
             onDismiss = { showSettingsDialog = false },
             onSave = { min, max ->
                 viewModel.updateTdsRange(min, max)
+                showSettingsDialog = false
             },
             onReset = {
                 viewModel.resetTdsRange()
+                showSettingsDialog = false
             }
         )
     }

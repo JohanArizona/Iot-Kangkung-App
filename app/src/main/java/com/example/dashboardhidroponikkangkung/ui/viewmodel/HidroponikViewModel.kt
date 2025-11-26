@@ -11,14 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class TdsRange(
-    val min: Int,
-    val max: Int
-)
+data class TdsRange(val min: Int, val max: Int)
 
-class HidroponikViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+class HidroponikViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefsManager = TdsPreferencesManager(application.applicationContext)
     private val repository = HidroponikRepository()
@@ -30,10 +25,7 @@ class HidroponikViewModel(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _tdsRange = MutableStateFlow(
-        TdsRange(
-            min = prefsManager.getMinTds(),
-            max = prefsManager.getMaxTds()
-        )
+        TdsRange(min = prefsManager.getMinTds(), max = prefsManager.getMaxTds())
     )
     val tdsRange: StateFlow<TdsRange> = _tdsRange.asStateFlow()
 
@@ -57,9 +49,19 @@ class HidroponikViewModel(
         }
     }
 
-    fun activatePump(pumpType: String, duration: Int) {
+    // NYALAin pompa A & B
+    fun activatePumps() {
         viewModelScope.launch {
-            repository.activatePump(pumpType, duration)
+            repository.turnOnPump("A")
+            repository.turnOnPump("B")
+        }
+    }
+
+    // MATIin pompa A & B
+    fun deactivatePumps() {
+        viewModelScope.launch {
+            repository.turnOffPump("A")
+            repository.turnOffPump("B")
         }
     }
 

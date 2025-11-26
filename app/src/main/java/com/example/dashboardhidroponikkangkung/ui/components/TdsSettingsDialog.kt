@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.dashboardhidroponikkangkung.ui.theme.StatusOptimal
 import com.example.dashboardhidroponikkangkung.ui.theme.StatusWarning
@@ -217,15 +218,19 @@ fun TdsSettingsDialog(
                                 }
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = StatusOptimal
                         ),
+                        contentPadding = PaddingValues(vertical = 12.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            "Simpan",
-                            fontWeight = FontWeight.SemiBold
+                            text = "Simpan",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
                         )
                     }
                 }

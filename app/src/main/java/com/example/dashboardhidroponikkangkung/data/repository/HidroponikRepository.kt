@@ -3,8 +3,9 @@ package com.example.dashboardhidroponikkangkung.data.repository
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.ServerValue
 import com.example.dashboardhidroponikkangkung.data.model.*
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -27,7 +28,7 @@ class HidroponikRepository {
                 val pumpA = snapshot.child("pumps/pumpA").let {
                     PumpStatus(
                         status = it.child("status").getValue(Boolean::class.java) ?: false,
-                        activationCount = it.child("activationCount").getValue(Int::class.java) ?: 0,
+                        activationCount = it.child("activationCount").getValue(Long::class.java) ?: 0L,
                         lastActivation = it.child("lastActivation").getValue(Long::class.java) ?: 0L
                     )
                 }
@@ -35,7 +36,7 @@ class HidroponikRepository {
                 val pumpB = snapshot.child("pumps/pumpB").let {
                     PumpStatus(
                         status = it.child("status").getValue(Boolean::class.java) ?: false,
-                        activationCount = it.child("activationCount").getValue(Int::class.java) ?: 0,
+                        activationCount = it.child("activationCount").getValue(Long::class.java) ?: 0L,
                         lastActivation = it.child("lastActivation").getValue(Long::class.java) ?: 0L
                     )
                 }
@@ -53,15 +54,15 @@ class HidroponikRepository {
                     )
                 }
 
-                val data = HidroponikData(
-                    sensors = sensors,
-                    pumpA = pumpA,
-                    pumpB = pumpB,
-                    isAutomatic = isAutomatic,
-                    history = history.sortedBy { it.timestamp }
+                trySend(
+                    HidroponikData(
+                        sensors = sensors,
+                        pumpA = pumpA,
+                        pumpB = pumpB,
+                        isAutomatic = isAutomatic,
+                        history = history.sortedBy { it.timestamp }
+                    )
                 )
-
-                trySend(data)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -73,24 +74,28 @@ class HidroponikRepository {
         awaitClose { rootRef.removeEventListener(listener) }
     }
 
+    // Mode Otomatis / Manual
     suspend fun setMode(isAutomatic: Boolean) {
         rootRef.child("mode/isAutomatic").setValue(isAutomatic).await()
     }
 
-    suspend fun activatePump(pumpType: String, duration: Int) {
-        val pumpRef = when (pumpType) {
-            "A" -> rootRef.child("pumps/pumpA")
-            "B" -> rootRef.child("pumps/pumpB")
-            else -> return
-        }
+    // === INI YANG BARU: ON / OFF LANGSUNG ===
+    suspend fun turnOnPump(pumpType: String) {
+        val pumpRef = rootRef.child("pumps/pump$pumpType")
+        val updates = mapOf(
+            "status" to true,
+            "lastActivation" to System.currentTimeMillis(),
+            "activationCount" to ServerValue.increment(1)  // auto increment di server
+        )
+        pumpRef.updateChildren(updates).await()
+    }
 
-        // Set status true
-        pumpRef.child("status").setValue(true).await()
-
-        // Update count and timestamp
-        val currentCount = pumpRef.child("activationCount")
-            .get().await().getValue(Int::class.java) ?: 0
-        pumpRef.child("activationCount").setValue(currentCount + 1).await()
-        pumpRef.child("lastActivation").setValue(System.currentTimeMillis()).await()
+    suspend fun turnOffPump(pumpType: String) {
+        val pumpRef = rootRef.child("pumps/pump$pumpType")
+        val updates = mapOf(
+            "status" to false,
+            "lastActivation" to System.currentTimeMillis()
+        )
+        pumpRef.updateChildren(updates).await()
     }
 }

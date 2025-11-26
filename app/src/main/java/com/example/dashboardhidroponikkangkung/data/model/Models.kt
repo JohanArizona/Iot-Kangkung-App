@@ -7,7 +7,7 @@ data class SensorData(
 
 data class PumpStatus(
     val status: Boolean = false,
-    val activationCount: Int = 0,
+    val activationCount: Long = 0,
     val lastActivation: Long = 0L
 )
 
